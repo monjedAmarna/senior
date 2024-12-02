@@ -1,71 +1,70 @@
-// استيراد نموذج المستخدمين و مكتبة bcryptjs و jsonwebtoken
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const jwt = require("jsonwebtoken");
+const db = require("../config/db"); // استيراد الاتصال بقاعدة البيانات
+const bcrypt = require("bcryptjs"); // لتشفير كلمة المرور
 
-// وظيفة لتسجيل المستخدم
-exports.register = (req, res) => {
-  const { email, password } = req.body;
-
-  // تحقق من وجود المستخدم مسبقًا
-  User.findByEmail(email, (err, existingUser) => {
-    if (err) {
-      return res.status(500).json({ message: 'Error checking user', error: err });
-    }
-
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // تشفير كلمة المرور
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
+// دالة مساعدة لتحويل استعلامات db.query إلى وعود (Promises)
+const queryDatabase = (query, params) => {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
       if (err) {
-        return res.status(500).json({ message: 'Error hashing password', error: err });
+        reject(err); // إذا حدث خطأ، قم برفض الوعد
+      } else {
+        resolve(results); // إذا تم تنفيذ الاستعلام بنجاح
       }
-
-      // إضافة المستخدم إلى قاعدة البيانات
-      User.create({ email, password: hashedPassword }, (err, newUser) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error creating user', error: err });
-        }
-
-        // توليد توكن JWT للمستخدم الجديد
-        const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.status(201).json({ message: 'User created successfully', token });
-      });
     });
   });
 };
 
-// وظيفة لتسجيل الدخول
-exports.login = (req, res) => {
+// تسجيل الدخول
+exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  // التحقق من وجود المستخدم
-  User.findByEmail(email, (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: 'Error fetching user', error: err });
+  try {
+    // البحث عن المستخدم بالبريد الإلكتروني
+    const results = await queryDatabase("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (results.length === 0) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    const user = results[0];
+
+    // مقارنة كلمة المرور المدخلة مع المخزنة
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // التحقق من صحة كلمة المرور
-    bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error comparing passwords', error: err });
-      }
+    // إنشاء التوكن
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
+    res.status(200).json({ message: "Login successful", token });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
-      // توليد توكن JWT للمستخدم
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+// تسجيل مستخدم جديد
+exports.registerUser = async (req, res) => {
+  const { email, password } = req.body;
 
-      res.status(200).json({ message: 'Login successful', token });
-    });
-  });
+  try {
+    // التحقق من وجود المستخدم مسبقًا
+    const results = await queryDatabase("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (results.length > 0) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // إضافة المستخدم الجديد إلى قاعدة البيانات
+    await queryDatabase("INSERT INTO users (email, password) VALUES (?, ?)", [email, hashedPassword]);
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };

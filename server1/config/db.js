@@ -1,25 +1,26 @@
-// استيراد مكتبة mysql2 للتعامل مع قاعدة البيانات
-const mysql = require('mysql2');
+ // Import MySQL library
+const mysql = require("mysql2");
 
-// استيراد مكتبة dotenv لتحميل المتغيرات البيئية من ملف .env
-require('dotenv').config();
+// Load environment variables
+require("dotenv").config();
 
-// إنشاء اتصال بقاعدة البيانات باستخدام بيانات من ملف .env
+// Create a MySQL connection
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST,        // اسم المضيف (Host)
-  user: process.env.DB_USER,        // اسم المستخدم لقاعدة البيانات
-  password: process.env.DB_PASSWORD, // كلمة المرور
-  database: process.env.DB_NAME     // اسم قاعدة البيانات
+  host: process.env.DB_HOST, // Database host from .env
+  user: process.env.DB_USER, // Database user from .env
+  password: process.env.DB_PASSWORD, // Database password from .env
+  database: process.env.DB_NAME, // Database name from .env
 });
 
-// التحقق من نجاح الاتصال بقاعدة البيانات
+// Connect to the database
 connection.connect((err) => {
   if (err) {
-    console.error('Error connecting to MySQL:', err); // في حالة وجود خطأ، يظهر في وحدة التحكم
-    return;
+    console.error("Error connecting to MySQL:", err.message);
+    process.exit(1); // Exit the application if the connection fails
+  } else {
+    console.log("Connected to MySQL database successfully!");
   }
-  console.log('Connected to MySQL database!'); // تأكيد الاتصال الناجح
 });
 
-// تصدير الاتصال لاستخدامه في أجزاء أخرى من التطبيق
+// Export the connection
 module.exports = connection;
