@@ -1,25 +1,33 @@
-// تحميل المتغيرات البيئية من ملف .env
-require('dotenv').config();
-
-// استيراد مكتبة Express لإنشاء التطبيق
 const express = require('express');
-
-// استيراد المسارات الخاصة بالمستخدمين
-const userRoutes = require('./routes/userRoutes');
-
-// إنشاء تطبيق Express
+const bcrypt = require('bcryptjs');
 const app = express();
+const port = 3000;
 
-// تحديد رقم المنفذ من المتغيرات البيئية أو استخدام 3000 كمنفذ افتراضي
-const port = process.env.PORT || 3000;
-
-// Middleware لتحليل بيانات JSON في الطلبات
 app.use(express.json());
 
-// ربط المسارات الخاصة بالمستخدمين بالتطبيق (API Base Route: /api)
-app.use('/api', userRoutes);
+const users = []; // للتخزين المؤقت للمستخدمين
 
-// بدء تشغيل الخادم والاستماع على المنفذ المحدد
+// مسار التسجيل
+app.post('/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // البحث عن المستخدم بناءً على البريد الإلكتروني
+    const findUser = users.find((data) => data.email === email);
+    if (findUser) {
+      return res.status(400).send("البريد الإلكتروني موجود بالفعل!");
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ email, password: hashedPassword });
+
+    res.status(201).send("تم التسجيل بنجاح!");
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`); // طباعة رسالة تأكيد
+  console.log(`Server is running on port ${port}`);
 });

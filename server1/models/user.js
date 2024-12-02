@@ -1,32 +1,25 @@
 // استيراد اتصال قاعدة البيانات من ملف config/db.js
 const db = require('../config/db');
 
-// تعريف وظيفة لجلب جميع المستخدمين من قاعدة البيانات
-exports.getAllUsers = (callback) => {
-  // استعلام SQL لجلب كل السجلات من جدول "users"
-  const query = 'SELECT * FROM users';
-  
-  // تنفيذ الاستعلام
-  db.query(query, (err, results) => {
+// تعريف وظيفة للبحث عن المستخدم بناءً على البريد الإلكتروني
+exports.findByEmail = (email, callback) => {
+  const query = 'SELECT * FROM users WHERE email = ?';
+  db.query(query, [email], (err, results) => {
     if (err) {
-      console.error('Error fetching users:', err);
-      return callback(err, null); // إرجاع الخطأ إلى الوظيفة المستدعية
+      return callback(err, null);
     }
-    callback(null, results); // إرجاع النتائج إذا نجح الاستعلام
+    callback(null, results[0]); // إرجاع أول نتيجة (إذا وجد)
   });
 };
 
-// تعريف وظيفة لإضافة مستخدم جديد (اختياري)
-exports.addUser = (userData, callback) => {
-  // استعلام SQL لإدخال بيانات المستخدم الجديد
-  const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-  
-  // تنفيذ الاستعلام مع البيانات
-  db.query(query, [userData.name, userData.email, userData.password], (err, results) => {
+// تعريف وظيفة لإضافة مستخدم جديد
+exports.create = (userData, callback) => {
+  const query = 'INSERT INTO users (email, password) VALUES (?, ?)';
+  db.query(query, [userData.email, userData.password], (err, results) => {
     if (err) {
-      console.error('Error adding user:', err);
       return callback(err, null);
     }
-    callback(null, results); // إرجاع النتائج إذا نجح الإدخال
+    console.log(results);  // إضافة هذا السطر لفحص ما يتم إرجاعه
+    callback(null, { id: results.insertId, ...userData }); 
   });
 };
