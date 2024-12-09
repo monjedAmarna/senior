@@ -4,6 +4,7 @@ import './App.css';
 const App = () => {
   const [isSignUpMode, setSignUpMode] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,10 +22,10 @@ const App = () => {
         alert(`Login successful: ${data.message}`);
         localStorage.setItem('token', data.token); // تخزين التوكن إذا لزم الأمر
       } else {
-        alert(`Login failed: ${data.message}`);
+        setErrorMessage(`Login failed: ${data.message}`);
       }
     } catch (error) {
-      console.error('Login error:', error);
+      setErrorMessage(`Login error: ${error.message}`);
     }
   };
 
@@ -38,11 +39,12 @@ const App = () => {
       const data = await response.json();
       if (response.ok) {
         alert(`Registration successful: ${data.message}`);
+        setFormData({ email: '', password: '' }); // Clear form data
       } else {
-        alert(`Registration failed: ${data.message}`);
+        setErrorMessage(`Registration failed: ${data.message}`);
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      setErrorMessage(`Registration error: ${error.message}`);
     }
   };
 
@@ -78,6 +80,7 @@ const App = () => {
             <button type="button" className="btn" onClick={handleLogin}>
               Login
             </button>
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
           </form>
 
           {/* Form التسجيل */}
@@ -108,6 +111,7 @@ const App = () => {
             <button type="button" className="btn" onClick={handleRegister}>
               Sign Up
             </button>
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
           </form>
         </div>
       </div>

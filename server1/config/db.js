@@ -1,4 +1,4 @@
- // Import MySQL library
+// Import MySQL library
 const mysql = require("mysql2");
 
 // Load environment variables
