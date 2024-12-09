@@ -1,62 +1,138 @@
-import React, { useState } from "react";  // استيراد React و useState لإدارة الحالة
-import "./App.css";  // استيراد ملف CSS لتنسيق التطبيق
-import SignInForm from "./components/SignInForm";  // استيراد نموذج تسجيل الدخول
-import SignUpForm from "./components/SignUpForm";  // استيراد نموذج التسجيل
+import React, { useState } from 'react';
+import './App.css';
 
-function App() {
-  // استخدام hook useState لتتبع حالة ما إذا كان المستخدم في وضع SignUp أو SignIn
-  const [isSignUp, setIsSignUp] = useState(false);
+const App = () => {
+  const [isSignUpMode, setSignUpMode] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
 
-  // دالة لتفعيل وضع SignUp
-  const handleSignUpClick = () => {
-    setIsSignUp(true);  // تغيير الحالة لتفعيل وضع SignUp
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // دالة لتفعيل وضع SignIn
-  const handleSignInClick = () => {
-    setIsSignUp(false);  // تغيير الحالة لتفعيل وضع SignIn
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(`Login successful: ${data.message}`);
+        localStorage.setItem('token', data.token); // تخزين التوكن إذا لزم الأمر
+      } else {
+        alert(`Login failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(`Registration successful: ${data.message}`);
+      } else {
+        alert(`Registration failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
   };
 
   return (
-    <div className={`container ${isSignUp ? "sign-up-mode" : ""}`}>
-      {/* الحاوية الرئيسية التي تحتوي على النماذج. إذا كانت الحالة signUp مفعلة، يتم إضافة الكلاس sign-up-mode */}
-
+    <div className={`container ${isSignUpMode ? 'sign-up-mode' : ''}`}>
       <div className="forms-container">
-        {/* حاوية النماذج الخاصة بتسجيل الدخول والتسجيل، يتم التبديل بينهما استنادًا إلى حالة signUp */}
-        <div className={`signin-signup ${isSignUp ? "sign-up-mode" : ""}`}>
-          {/* نموذج تسجيل الدخول */}
-          {isSignUp ? <SignUpForm /> : <SignInForm />}
+        <div className="signin-signup">
+          {/* Form تسجيل الدخول */}
+          <form className="sign-in-form">
+            <h2 className="title">Sign in</h2>
+            <div className="input-field">
+              <i className="fas fa-user"></i>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="input-field">
+              <i className="fas fa-lock"></i>
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <button type="button" className="btn" onClick={handleLogin}>
+              Login
+            </button>
+          </form>
+
+          {/* Form التسجيل */}
+          <form className="sign-up-form">
+            <h2 className="title">Sign up</h2>
+            <div className="input-field">
+              <i className="fas fa-user"></i>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="input-field">
+              <i className="fas fa-lock"></i>
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <button type="button" className="btn" onClick={handleRegister}>
+              Sign Up
+            </button>
+          </form>
         </div>
       </div>
-
-      {/* الحاويات التي تحتوي على الألواح */}
       <div className="panels-container">
-        {/* اللوح الأيسر (التسجيل الجديد) */}
         <div className="panel left-panel">
           <div className="content">
-            <h3>New here ?</h3>
-            <p>New client, welcome! Please log in to benefit from the offered services.</p>
-            <button className="btn transparent" onClick={handleSignUpClick}>
-              Sign up
+            <h3>New here?</h3>
+            <p>Sign up to get started!</p>
+            <button className="btn transparent" onClick={() => setSignUpMode(true)}>
+              Sign Up
             </button>
           </div>
-          <img src="/Artboard 23.png" className="image" alt="" />
         </div>
-
-        {/* اللوح الأيمن (الدخول للمستخدمين الجدد) */}
         <div className="panel right-panel">
           <div className="content">
-            <h3>One of us ?</h3>
-            <p>Welcome back! Please log in and enjoy all the services</p>
-            <button className="btn transparent" onClick={handleSignInClick}>
-              Sign in
+            <h3>One of us?</h3>
+            <p>Sign in to continue!</p>
+            <button className="btn transparent" onClick={() => setSignUpMode(false)}>
+              Sign In
             </button>
           </div>
-          <img src="/Artboard 23.png" className="image" alt="Artboard" />
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default App;  // تصدير المكون ليتم استخدامه في أجزاء أخرى من التطبيق
+export default App;

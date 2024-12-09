@@ -1,12 +1,14 @@
-const express = require("express");
+const express = require('express');
+const cors = require('cors'); // استيراد مكتبة CORS
+const authRoutes = require('./routes/authRoutes');
+
 const app = express();
-const authRoutes = require("./routes/authRoutes"); // استيراد مسارات التوثيق
+const PORT = 5000;
 
-app.use(express.json()); // للتعامل مع بيانات JSON
-app.use("/api/auth", authRoutes); // استخدام مسارات التوثيق
+app.use(cors()); // تمكين CORS للسماح بالطلبات من الفرونت
+app.use(express.json()); // للتعامل مع JSON في الطلبات
+app.use('/api', authRoutes); // ربط المسارات
 
-// تشغيل السيرفر
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
